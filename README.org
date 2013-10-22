@@ -1,0 +1,14 @@
+* Description
+Currently provides a single command, =add=, that adds the specified items to
+iTunes.
+
+It will traverse folder hierarchies to search for files with common media
+extensions. It will also add items inside zip archives.
+
+OS X only.
+* Usage
+#+begin_example
+itunes
+    add [items...]   Add files or folders to the iTunes library
+    help             Show usage
+#+end_example
