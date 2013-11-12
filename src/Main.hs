@@ -16,11 +16,11 @@ data Args = Add [FilePath] | Copy [FilePath] | Help | Invalid | Unknown String
 main :: IO ()
 main = getArgs >>= execute . parseArgs
   where
-    parseArgs ("add":xs) = if (not . null) xs then Add xs else Invalid
+    parseArgs ("add":xs)  = if (not . null) xs then Add xs else Invalid
     parseArgs ("copy":xs) = if (not . null) xs then Copy xs else Invalid
-    parseArgs ("help":_) = Help
-    parseArgs (x:_) = Unknown x
-    parseArgs _     = Invalid
+    parseArgs ("help":_)  = Help
+    parseArgs (x:_)       = Unknown x
+    parseArgs _           = Invalid
 
 -- | Print program usage to stdout.
 showUsage :: IO ()
