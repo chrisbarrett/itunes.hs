@@ -12,81 +12,29 @@ import           System.Exit                  (exitFailure)
 import           System.FilePath.Posix
 import           Text.PrettyPrint.ANSI.Leijen (dullyellow, green, linebreak,
                                                putDoc, red, text, (<+>), (<>))
-addToItunes :: [FilePath] -> IO ()
-addToItunes paths = do
-  itunesExists <- itunesImportFolder >>= doesDirectoryExist
-  unless itunesExists $ putStrLn "Cannot find iTunes Media folder" >> exitFailure
-  warnWhereNotExists paths
-  xs <- liftM concat $ mapM mediaFromPath paths
-  when (null xs) $ putStrLn "No media found." >> exitFailure
 
-  let files = map fst xs
-      media = map snd xs
-  mapM_ importMedia media
-
+-- | Add the list of filepaths to iTunes with a strategy enumerated by ImportStrategy.
+addToItunes :: ImportStrategy -> [FilePath] -> IO ()
+addToItunes strategy xs =
+  findMedia xs >>= mapM toTask >>= mapM_ importMedia . concat
   where
-    -- | Warn when trying to import items that do not exist on the filesystem.
-    warnWhereNotExists ps = do
-      notExists <- filterM (liftM not . fileOrDirectoryExists) ps
-      unless (null notExists) $ do
-        putDoc $ dullyellow (text "Warning: the following items do not exist:") <> linebreak
-        mapM_ (\x -> putDoc $
-                    dullyellow (text "  ? ")
-                    <+> text (takeFileName x)
-                    <> linebreak)
-          notExists
-
-    -- | The path to the iTunes import folder.
-    itunesImportFolder :: IO FilePath
-    itunesImportFolder  = ( getHomeDirectory /> "Music" </> "iTunes" </> "iTunes Media" )
-                          /> "Automatically Add to iTunes.localized"
-
-    -- | Import each media item into iTunes.
-    importMedia :: Importable -> IO ()
-    importMedia x = do
-      dest <- itunesImportFolder
-      tasks <- importTasks dest x
-      forM_ tasks $ \t -> do
-        runTask t
-        putDoc $ green (text "  A ") <+> text (taskName t)  <> linebreak
-
-
--- | Concatenate a monadic filepath with a pure filepath.
-(/>) :: IO FilePath -> FilePath -> IO FilePath
-io /> p = (</>) <$> io <*> pure p
-infix 4 />
-
--- | Test whether the given file or directory exists.
-fileOrDirectoryExists :: FilePath -> IO Bool
-fileOrDirectoryExists x = or <$> sequence [doesDirectoryExist x, doesFileExist x]
-
-type Count = Int
--- | Perform a naive string pluralisation.
-pluralize :: Count -> String -> String
-pluralize 1 str = str
-pluralize _ str = str ++ "s"
-
-type Default = Bool
--- | Prompt the user for a yes or no response, with a default answer.
-getYesOrNo :: Default -> IO Bool
-getYesOrNo deflt = do
-  ch <- getChar
-  case toLower ch of
-    'y'  -> return True
-    'n'  -> return False
-    '\n' -> return deflt
-    _    -> getYesOrNo deflt
+    findMedia paths = liftM concat $ mapM mediaFromPath paths
+    itunesFolder = "~/Music/iTunes/iTunes Media/Automatically Add to iTunes.localized"
+    toTask = importTasks strategy itunesFolder
+    importMedia t = do
+      runTask t
+      putDoc $ green (text "  A ") <+> text (taskName t)  <> linebreak
 
 -- | Filter the input files for importable items.
-mediaFromPath :: FilePath -> IO [(FilePath, Importable)]
+mediaFromPath :: FilePath -> IO [Importable]
 mediaFromPath p = do
   isDir <- doesDirectoryExist p
   isMedia <- isMediaFile p
   isZip <- isZipFile p
   case (isDir, isMedia, isZip) of
     (True, _, _) -> liftM concat $ getFilesInTree p >>= mapM mediaFromPath
-    (_, True, _) -> return [ (p, MediaFile p) ]
-    (_, _, True) -> return [ (p, ZipFile p) ]
+    (_, True, _) -> return [ MediaFile p ]
+    (_, _, True) -> return [ ZipFile p ]
     _            -> return []
 
 -- | Walk the directory tree to find all files below a given path.

@@ -2,6 +2,7 @@ module Itunes.Media
        (
          ImportTask(..)
        , Importable(..)
+       , ImportStrategy(..)
        , importTasks
        , isMediaFile
        , isZipFile
@@ -20,18 +21,21 @@ data ImportTask = ImportTask
                   { taskName :: String
                   , runTask  :: IO () }
 
-data Importable = MediaFile FilePath
-                | ZipFile FilePath
+data Importable = MediaFile FilePath | ZipFile FilePath
 
+data ImportStrategy = Move | Copy
 
 -- | Create tasks to add the given media to the iTunes library.
-importTasks :: FilePath -> Importable -> IO [ImportTask]
+importTasks :: ImportStrategy -> FilePath -> Importable -> IO [ImportTask]
 
-importTasks dest (MediaFile f) =
+importTasks action dest (MediaFile f) =
   return [ ImportTask { taskName = takeFileName f
-                      , runTask = copyFile f $ dest </> takeFileName f } ]
+                      , runTask =
+                        case action of
+                          Move -> renameFile f $ dest </> takeFileName f
+                          Copy -> copyFile f $ dest </> takeFileName f } ]
 
-importTasks dest (ZipFile f) = withArchive f $ do
+importTasks _ dest (ZipFile f) = withArchive f $ do
   entries <- liftM (filter hasMediaExt) entryNames
   forM entries $ \x ->
     return ImportTask { taskName = x

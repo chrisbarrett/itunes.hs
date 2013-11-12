@@ -5,6 +5,7 @@ module Main where
 import           Control.Exception
 import           Control.Monad
 import           Itunes.Import
+import qualified Itunes.Media       as Media
 import           System.Directory   (canonicalizePath, removeFile)
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
@@ -39,10 +40,10 @@ execute Invalid =
   putStrLn "Invalid usage." >> showUsage >> exitFailure
 execute (Unknown cmd) =
   putStrLn ("Unrecognised command: " ++ cmd) >> showUsage >> exitFailure
-execute (Copy paths) = canonicalize paths >>= addToItunes
+execute (Copy paths) = canonicalize paths >>= addToItunes Media.Copy
 execute (Add paths) = do
   ps <- canonicalize paths
-  addToItunes ps
+  addToItunes Media.Move ps
   forM_ ps removeFile
 
 -- | Return the canonical version of each given path.
