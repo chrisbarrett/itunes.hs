@@ -1,6 +1,5 @@
 * Description
-Currently provides a single command, =add=, that adds the specified items to
-iTunes.
+A commandline tool to add items to your iTunes library.
 
 It will traverse folder hierarchies to search for files with common media
 extensions. It will also add items inside zip archives.
@@ -9,6 +8,7 @@ OS X only.
 * Usage
 #+begin_example
 itunes
-    add [items...]   Add files or folders to the iTunes library
+    add [items...]   Add files or folders to the iTunes library, removing originals.
+    copy [items...]  Add files or folders to the iTunes library, preserving originals.
     help             Show usage
 #+end_example
