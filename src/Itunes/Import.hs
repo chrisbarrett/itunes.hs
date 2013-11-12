@@ -5,15 +5,11 @@ module Itunes.Import
        where
 import           Control.Applicative
 import           Control.Monad
-import           Data.Char                    (toLower)
 import           Itunes.Media
 import           System.Directory
-import           System.Exit                  (exitFailure)
 import           System.FilePath.Posix
-import           Text.PrettyPrint.ANSI.Leijen (dullyellow, green, linebreak,
-                                               putDoc, red, text, (<+>), (<>))
 
--- | Add the list of filepaths to iTunes with a strategy enumerated by ImportStrategy.
+-- | Add files to iTunes with a strategy enumerated by ImportStrategy.
 addToItunes :: ImportStrategy -> [FilePath] -> IO ()
 addToItunes strategy xs =
   findMedia xs >>= mapM toTask >>= mapM_ importMedia . concat
@@ -23,7 +19,7 @@ addToItunes strategy xs =
     toTask = importTasks strategy itunesFolder
     importMedia t = do
       runTask t
-      putDoc $ green (text "  A ") <+> text (taskName t)  <> linebreak
+      putStrLn $ "  A " ++ taskName t ++ "\n"
 
 -- | Filter the input files for importable items.
 mediaFromPath :: FilePath -> IO [Importable]
