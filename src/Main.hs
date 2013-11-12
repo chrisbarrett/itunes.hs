@@ -20,7 +20,7 @@ main = getArgs >>= execute . parseArgs
     parseArgs ("add":xs)  | (not . null) xs = Add xs
     parseArgs ("copy":xs) | (not . null) xs = Copy xs
     parseArgs ("help":_)  = Help
-    parseArgs (x:_)       = Unknown x
+    parseArgs (cmd:_)     = Unknown cmd
     parseArgs _           = Invalid
 
 -- | Print program usage to stdout.
