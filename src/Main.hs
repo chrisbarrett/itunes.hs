@@ -5,19 +5,19 @@ module Main where
 import           Control.Exception
 import           Control.Monad
 import           Itunes.Import
-import           System.Directory   (canonicalizePath)
+import           System.Directory   (canonicalizePath, removeFile)
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 
-
 -- | Enumerates the possible parsed values of the program arguments.
-data Args = Add [FilePath] | Help | Invalid | Unknown String
+data Args = Add [FilePath] | Copy [FilePath] | Help | Invalid | Unknown String
           deriving Show
 
 main :: IO ()
 main = getArgs >>= execute . parseArgs
   where
     parseArgs ("add":xs) = if (not . null) xs then Add xs else Invalid
+    parseArgs ("copy":xs) = if (not . null) xs then Copy xs else Invalid
     parseArgs ("help":_) = Help
     parseArgs (x:_) = Unknown x
     parseArgs _     = Invalid
@@ -27,7 +27,8 @@ showUsage :: IO ()
 showUsage =
   putStrLn $ unlines
   [ "Usage:"
-  , "  add [items...]   Add files or folders to the iTunes library"
+  , "  add [items...]   Add files or folders to the iTunes library, removing originals."
+  , "  copy [items...]  Add files or folders to the iTunes library, preserving originals."
   , "  help             Show usage" ]
 
 -- | Run the program as specified by the program arguments.
@@ -38,8 +39,13 @@ execute Invalid =
   putStrLn "Invalid usage." >> showUsage >> exitFailure
 execute (Unknown cmd) =
   putStrLn ("Unrecognised command: " ++ cmd) >> showUsage >> exitFailure
-execute (Add args) =
-  pathsFromArgs >>= addToItunes
-  where
-    pathsFromArgs = forM args $ \path ->
-        canonicalizePath path `catch` (\(_::IOException) -> return path)
+execute (Copy paths) = canonicalize paths >>= addToItunes
+execute (Add paths) = do
+  ps <- canonicalize paths
+  addToItunes ps
+  forM_ ps removeFile
+
+-- | Return the canonical version of each given path.
+-- | Paths that do not exist are unchanged.
+canonicalize :: [FilePath] -> IO [FilePath]
+canonicalize = mapM $ \p -> canonicalizePath p `catch` (\(_::IOException) -> return p)

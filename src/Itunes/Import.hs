@@ -23,7 +23,6 @@ addToItunes paths = do
   let files = map fst xs
       media = map snd xs
   mapM_ importMedia media
-  promptDeleteOriginals files
 
   where
     -- | Warn when trying to import items that do not exist on the filesystem.
@@ -36,19 +35,6 @@ addToItunes paths = do
                     <+> text (takeFileName x)
                     <> linebreak)
           notExists
-
-    -- | Prompt the user whether to delete the original items after importing.
-    promptDeleteOriginals :: [FilePath] -> IO ()
-    promptDeleteOriginals xs = do
-      let n = length xs
-      putStrLn $ "Delete original " ++ pluralize n "item" ++ "? (y/n) [n] "
-      shouldDelete <- getYesOrNo False
-      when shouldDelete $ do
-        forM_ xs $ \x -> do
-          removeFile x
-          putDoc $ red (text "  D ") <+> text x <> linebreak
-
-        putStrLn $ "Deleted " ++ show n ++ " " ++ pluralize n "item" ++ "."
 
     -- | The path to the iTunes import folder.
     itunesImportFolder :: IO FilePath
