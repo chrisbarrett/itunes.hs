@@ -17,8 +17,8 @@ data Args = Add [FilePath] | Copy [FilePath] | Help | Invalid | Unknown String
 main :: IO ()
 main = getArgs >>= execute . parseArgs
   where
-    parseArgs ("add":xs)  = if (not . null) xs then Add xs else Invalid
-    parseArgs ("copy":xs) = if (not . null) xs then Copy xs else Invalid
+    parseArgs ("add":xs)  | (not . null) xs = Add xs
+    parseArgs ("copy":xs) | (not . null) xs = Copy xs
     parseArgs ("help":_)  = Help
     parseArgs (x:_)       = Unknown x
     parseArgs _           = Invalid
