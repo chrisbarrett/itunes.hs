@@ -35,11 +35,13 @@ mediaFromPath p = do
 
 -- | Walk the directory tree to find all files below a given path.
 getFilesInTree :: FilePath -> IO [FilePath]
-getFilesInTree d | takeFileName d `elem` [".", ".."] = return []
-getFilesInTree d = do
-  isDir <- doesDirectoryExist d
-  isFile <- doesFileExist d
+getFilesInTree x | takeFileName x `elem` [".", ".."] = return []
+getFilesInTree x = do
+  isDir <- doesDirectoryExist x
+  isFile <- doesFileExist x
   case (isDir, isFile) of
-    (True, _) -> concat <$> (getDirectoryContents d >>= mapM (getFilesInTree . (</>) d))
-    (_, True) -> return [d]
+    (True, _) -> concat <$> getDirectoryFiles x
+    (_, True) -> return [x]
     _         -> return []
+  where
+    getDirectoryFiles d = getDirectoryContents d >>= mapM (getFilesInTree . (</>) d)
