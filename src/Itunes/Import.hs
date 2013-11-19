@@ -11,12 +11,22 @@ import           System.FilePath.Posix
 
 -- | Add files to iTunes with a strategy enumerated by ImportStrategy.
 addToItunes :: ImportStrategy -> [FilePath] -> IO ()
-addToItunes strategy xs =
-  findMedia xs >>= mapM toTask >>= mapM_ importMedia . concat
+addToItunes strategy xs = do
+  itunes <- itunesFolder
+  itunesDirExists <- doesDirectoryExist itunes
+  if itunesDirExists
+    then findMedia xs >>= mapM (toTask itunes) >>= mapM_ importMedia . concat
+    else error $ "iTunes folder does not exist at expected path: " ++ itunes
   where
-    findMedia paths = liftM concat $ mapM mediaFromPath paths
-    itunesFolder = "~/Music/iTunes/iTunes Media/Automatically Add to iTunes.localized"
-    toTask = importTasks strategy itunesFolder
+    findMedia paths = concat <$> mapM mediaFromPath paths
+    toTask itunes x = importTasks strategy itunes x
+
+    itunesFolder = do
+      home <- getHomeDirectory
+      return $
+        home </> "Music" </> "iTunes" </> "iTunes Media"
+        </> "Automatically Add to iTunes.localized"
+
     importMedia t = do
       runTask t
       putStrLn $ "  A " ++ taskName t ++ "\n"

@@ -28,12 +28,12 @@ data ImportStrategy = Move | Copy
 -- | Create tasks to add the given media to the iTunes library.
 importTasks :: ImportStrategy -> FilePath -> Importable -> IO [ImportTask]
 
-importTasks action dest (MediaFile f) =
-  return [ ImportTask { taskName = takeFileName f
-                      , runTask =
-                        case action of
-                          Move -> renameFile f $ dest </> takeFileName f
-                          Copy -> copyFile f $ dest </> takeFileName f } ]
+importTasks strategy dest (MediaFile f) =
+  let fname = takeFileName f
+      tsk = case strategy of
+        Move -> renameFile f $ dest </> fname
+        Copy -> copyFile f $ dest </> fname
+  in return [ ImportTask { taskName = fname, runTask = tsk} ]
 
 importTasks _ dest (ZipFile f) = withArchive f $ do
   entries <- liftM (filter hasMediaExt) entryNames

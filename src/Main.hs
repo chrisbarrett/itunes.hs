@@ -5,7 +5,8 @@ import           Control.Exception
 import           Control.Monad
 import           Itunes.Import
 import qualified Itunes.Media       as Media
-import           System.Directory   (canonicalizePath, removeFile)
+import           System.Directory   (canonicalizePath, doesDirectoryExist,
+                                     removeDirectory)
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 
@@ -43,7 +44,10 @@ execute (Copy paths) = canonicalize paths >>= addToItunes Media.Copy
 execute (Add paths) = do
   ps <- canonicalize paths
   addToItunes Media.Move ps
-  forM_ ps removeFile
+  forM_ ps $ \path -> do
+    isDir <- doesDirectoryExist path
+    if isDir then removeDirectory path else return ()
+
 
 -- | Return the canonical version of each given path.
 -- | Paths that do not exist are unchanged.
